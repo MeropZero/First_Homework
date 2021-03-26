@@ -135,33 +135,31 @@ public class UploadActivity extends AppCompatActivity {
         //TODO 5
         // 使用api.submitMessage()方法提交留言
         // 如果提交成功则关闭activity，否则弹出toast
-        new Thread(new Runnable() {
+
+        RequestBody requestBody = RequestBody.create(MediaType.parse("multipart"),coverImageData);
+        MultipartBody.Part bfrom = MultipartBody.Part.createFormData("from",Constants.STUDENT_ID);
+        MultipartBody.Part bto = MultipartBody.Part.createFormData("to",to);
+        MultipartBody.Part bcontent = MultipartBody.Part.createFormData("content",content);
+        MultipartBody.Part bcover = MultipartBody.Part.createFormData("image","cover.png",requestBody);
+        Call<UploadResponse> call = api.submitMessage(Constants.STUDENT_ID,extra_value,bfrom,bto,bcontent,bcover,Constants.token);
+        call.enqueue(new Callback<UploadResponse>() {
             @Override
-            public void run() {
-                File image = new File(String.valueOf(coverImageUri));
-                RequestBody requestBody = RequestBody.create(MediaType.parse("multipart"),image);
-                MultipartBody.Part bfrom = MultipartBody.Part.createFormData("from",Constants.STUDENT_ID);
-                MultipartBody.Part bto = MultipartBody.Part.createFormData("to",to);
-                MultipartBody.Part bcontent = MultipartBody.Part.createFormData("content",content);
-                MultipartBody.Part bimage = MultipartBody.Part.create(requestBody);
-                Call<UploadResponse> call = api.submitMessage(Constants.STUDENT_ID,extra_value,bfrom,bto,bcontent,bimage,Constants.token);
-                try {
-                    Response<UploadResponse> response = call.execute();
-                    if (response.isSuccessful()) {
-                        Intent intent = new Intent(UploadActivity.this,MainActivity.class);
-                        startActivity(intent);
-                        finish();
-                    }else {
-                        Looper.prepare();
+            public void onResponse(Call<UploadResponse> call, Response<UploadResponse> response) {
+                if (response.isSuccessful()){
+                    final boolean success = response.body().success;
+                    if (success == false){
                         Toast.makeText(UploadActivity.this,"提交失败",Toast.LENGTH_SHORT).show();
-                        Looper.loop();
+                    }else {
+                        finish();
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
-        }).start();
 
+            @Override
+            public void onFailure(Call<UploadResponse> call, Throwable t) {
+                t.printStackTrace();
+            }
+        });
     }
 
 
